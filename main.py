@@ -22,9 +22,9 @@ sizeBox = track - 4 * spaceW;
 
 # Box
 boxScore = [[], [], [], []]
-boxTrack = [[], [], [], []]
+boxX = [[], [], [], []]
 boxY = [[], [], [], []]
-trackLine = high - sizeBox
+positionY = [high - sizeBox, high - sizeBox, high - sizeBox, high - sizeBox]
 
 # Create the screen
 screen = pg.display.set_mode((weight, high))
@@ -47,17 +47,37 @@ def setBackground():
 
 # Create Box
 def box(score, x, y):
-    pg.draw.rect(screen, color(score), pg.Rect(x, y, sizeBox, sizeBox))
+    pg.draw.rect(screen, color(score), pg.Rect(x, round(y), sizeBox, sizeBox))
     scoreStr = font.render(str(score), True, (255, 255, 255))
-    screen.blit(scoreStr, (x + sizeBox / 2 - 10, y + sizeBox / 2 - 16))
+    textX=9*len(str(score));
+    textY=16;
+    screen.blit(scoreStr, (x + sizeBox / 2 - textX, y + sizeBox / 2 - textY))
     # pg.display.flip()
 
 
 # Computer color by score
 def color(score):
-    green = 229 - score / 20 if 229 - score / 20 > 128 else 128;
-    blue = 204 - score / 20 if 204 - score / 20 > 0 else 0;
+    green = 229 - score / 2 if 229 - score / 2 > 128 else 128;
+    blue = 204 - score / 2 if 204 - score / 2 > 0 else 0;
     return 255, green, blue
+
+
+# check box collision
+def isCollision(score, y, x):
+    delScore = 0;
+    for i in range(len(score) - 1, 0, -1):
+        if score[i] == score[i - 1]:
+            score[i - 1] *= 2
+            delScore += 1;
+        #else:
+            #y[i] -= sizeBox
+
+    for i in range(delScore):
+        del score[len(score)-1]
+        del y[len(y)-1]
+        del x[len(x)-1]
+
+    return len(score) + 1
 
 
 # Game Loop
@@ -79,20 +99,25 @@ while running:
     # Show all of Box
     for i in range(len(boxScore)):
         for j in range(len(boxScore[i])):
-            box(boxScore[i][j], boxTrack[i][j], boxY[i][j])
+            box(boxScore[i][j], boxX[i][j], boxY[i][j])
 
     # Box moving
     boxMoving += boxSpeed
-    boxX = 2 * spaceW + index * track
-    box(2, boxX, boxMoving)
+    positionX = 2 * spaceW + index * track
+    box(2, positionX, boxMoving)
 
     # initial box and save box
-    if trackLine < boxMoving:
+    if positionY[index] < boxMoving:
         boxScore[index].append(2)
-        boxTrack[index].append(boxX)
-        boxY[index].append(boxMoving)
+        boxX[index].append(positionX)
+        boxY[index].append(positionY[index])
         boxMoving = 0
         boxSpeed = slowSpeed
+
+    number = isCollision(boxScore[index], boxY[index], boxX[index])
+    # check box collision
+    positionY[index] = high - number * sizeBox-number*2
+
     # update draw
     pg.display.flip()
     # update screen
