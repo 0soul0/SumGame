@@ -7,6 +7,7 @@ BLACK = (0, 0, 0)
 GRAY = (224, 224, 224)
 WHITE = (255, 255, 255)
 GREEN = (23, 232, 215)
+GREEN1 = (172, 255, 112)
 # Initialize the pygame
 pg.init()
 
@@ -16,14 +17,15 @@ weight = 400
 high = 750
 slowSpeed = 0.01
 fastSpeed = 10
-spaceW = 1
+space = 1
 track = weight / NumberOfTracks
 index = 0
 boxSpeed = slowSpeed
-boxMoving = 0
+backgroundTopMargin = 50
+boxMoving = backgroundTopMargin - 10
 
 # Box rect size
-sizeBox = track - 4 * spaceW
+sizeBox = track - 4 * space
 
 # Box
 boxScore = []
@@ -84,16 +86,16 @@ def get_score():
 def set_background():
     screen.blit(background, (0, 0))
     for i in range(NumberOfTracks - 1):
-        pg.draw.rect(screen, GRAY, pg.Rect((i + 1) * (track - spaceW), 0, 2 * spaceW, high))
-    # pg.display.flip()
+        pg.draw.rect(screen, GRAY, pg.Rect((i + 1) * (track - space), backgroundTopMargin, 2 * space, high))
+    pg.draw.rect(screen, BLACK, pg.Rect(0, backgroundTopMargin, weight, 5 * space))
 
 
 # Create Box
-def box(score, x, y):
+def create_box(score, x, y, size_box):
     global text_size_x, text_size_y
-    pg.draw.rect(screen, color(score), pg.Rect(x, round(y), sizeBox, sizeBox))
+    pg.draw.rect(screen, color(score), pg.Rect(x, round(y), size_box, size_box))
     score_str = font_32.render(str(score), True, WHITE)
-    screen.blit(score_str, (x + sizeBox / 2 - compute_length_of_text(score), y + sizeBox / 2 - text_size_y))
+    screen.blit(score_str, (x + size_box / 2 - compute_length_of_text(score), y + size_box / 2 - text_size_y))
     # pg.display.flip()
 
 
@@ -183,7 +185,7 @@ def is_game_over(box_y):
 restart_game()
 running = True
 game_pass = True
-initial_score = int(math.pow(2, random.randint(1, 5)))
+initial_score = [int(math.pow(2, random.randint(1, 5))), int(math.pow(2, random.randint(1, 5)))]
 while running:
     screen.fill(BLACK)
     set_background()
@@ -199,14 +201,17 @@ while running:
             if game_pass:
                 index = int(pg.mouse.get_pos()[0] / track)
                 boxSpeed = fastSpeed
-            elif (120, 340) <= pg.mouse.get_pos() <= (290, 370):
+            elif 120 < pg.mouse.get_pos()[0] in range(120, 290) and pg.mouse.get_pos()[1] in range(340, 370):
                 game_pass = True
                 restart_game()
 
-    # Show all of Box
+    # Show all of box
     for i in range(len(boxScore)):
         for j in range(len(boxScore[i])):
-            box(boxScore[i][j], boxX[i][j], boxY[i][j])
+            create_box(boxScore[i][j], boxX[i][j], boxY[i][j], sizeBox)
+
+    # Show next box
+    create_box(initial_score[1], weight / 5, 10, sizeBox / 2)
 
     # check game over
     if is_game_over(boxY[index]):
@@ -216,24 +221,25 @@ while running:
 
     # initial Box moving
     boxMoving += boxSpeed
-    positionX = 2 * spaceW + index * track
-    box(initial_score, positionX, boxMoving)
+    positionX = 2 * space + index * track
+    create_box(initial_score[0], positionX, boxMoving, sizeBox)
 
     # initial box and save box
     if positionY[index] < boxMoving:
         # save box
-        boxScore[index].append(initial_score)
+        boxScore[index].append(initial_score[0])
         boxX[index].append(positionX)
         boxY[index].append(positionY[index])
         # initial box
-        boxMoving = 0
+        boxMoving = 50
         boxSpeed = slowSpeed
-        initial_score = int(math.pow(2, random.randint(1, 5)))
+        initial_score[0]=initial_score[1]
+        initial_score[1] = int(math.pow(2, random.randint(1, 5)))
 
     # check box collision
     number = is_collision(boxScore, boxY, boxX, index, len(boxScore) - 1)
     # 計算boxY軸最高線 軌道高-(目前軌道item數量+1)*box高 - box和box之間的距離
-    positionY[index] = high - (number + 1) * sizeBox - 2 * number * spaceW
+    positionY[index] = high - (number + 1) * sizeBox - 2 * number * space
 
     # update draw
     # pg.display.flip()
